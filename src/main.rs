@@ -1,11 +1,8 @@
-#![allow(unused_imports)]
-
 use async_ssh2_tokio::client::{Client, AuthMethod, ServerCheckMethod, CommandExecutedResult};
 use lazy_static::lazy_static;
 use tokio::task::JoinSet;
 use std::{sync::Arc, process};
 use tokio::sync::Semaphore;
-use std::error::Error;
 
 mod getopt; use crate::getopt::*;
 
@@ -63,7 +60,6 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         (remote_host.clone(), command.clone(), client.execute(command).await?)
                     );
                 }
-//                let result = client.execute(&GETOPT.command).await?;
 
                 Ok(results)
             }

@@ -12,9 +12,8 @@
  */
 
 use std::env;
-use std::process;
 
-pub const DEFAULT_MAX_SESSIONS: usize = 2;
+pub const DEFAULT_MAX_SESSIONS: usize = 16;
 
 // Define your command line arguments here: name and type
 #[derive(Debug)]
