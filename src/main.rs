@@ -17,6 +17,7 @@ pub fn usage() {
     eprintln!("Usage: bulkssh [-v] -c command [router_addrs] ...");
     eprintln!("       -v            verbose");
     eprintln!("       -c            command (use quotes to escape white space in command)");
+    eprintln!("                     (can be repeated, but typically uses new shell, so CWD/env not preserved");
     eprintln!("       -I            identity/private key file");
     eprintln!("       -u            username");
     eprintln!("       -n N          maximum number of concurrent sessions ({})", DEFAULT_MAX_SESSIONS);
@@ -39,7 +40,6 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tasks.spawn({
 
             let remote_host = remote_host.clone();
-
             let semaphore = semaphore.clone();
 
             async move {
@@ -49,6 +49,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if GETOPT.verbose {
                     eprintln!("Connecting to {}:", &remote_host);
                 }
+
                 let auth_method = AuthMethod::with_key_file(&GETOPT.private_key_file, None);
                 let client = Client::connect((remote_host.clone(), 22),
                     &GETOPT.username, auth_method, ServerCheckMethod::NoCheck).await?;
