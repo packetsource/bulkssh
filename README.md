@@ -20,3 +20,7 @@ order to preserve host resources, CPU, network and/or all of these.
 
 SSH sessions are established directly. No ~/.ssh/config file is run, and no support is
 currently included for proxying via a gateway host. 
+
+Authentication is key-based with a default private key sought from `~/.ssh/id_ed25519`,
+but alternate locations can be specified with `-I`, and alternate usernames can be
+specified with `-u`. These are constant for all established sessions, however.
