@@ -3,6 +3,8 @@ use lazy_static::lazy_static;
 use tokio::task::JoinSet;
 use std::{sync::Arc, process};
 use tokio::sync::Semaphore;
+use std::path::Path;
+use rpassword::prompt_password;
 
 mod getopt; use crate::getopt::*;
 
@@ -20,12 +22,30 @@ pub fn usage() {
     eprintln!("                     (can be repeated, but typically uses new shell, so CWD/env not preserved");
     eprintln!("       -I filename   identity/private key file");
     eprintln!("       -u username   use specified username");
+    eprintln!("       -P            prompt for a password, and use SSH password auth");
     eprintln!("       -g pattern    grep output for lines matching regular expression");
     eprintln!("       -n N          maximum number of concurrent sessions ({})", DEFAULT_MAX_SESSIONS);
 
     process::exit(1);
 }
 
+pub fn default_key_file() -> Option<String> {
+    let checklist = [
+        ".ssh/id_ed25519",
+        ".ssh/id_rsa",
+    ];
+    for file in &checklist {
+        #[allow(deprecated)]
+        let path = format!("{}/{}",
+            std::env::home_dir().unwrap().display(),
+            file);
+        if Path::new(&path).exists() {
+            return Some(path);
+        }
+    }
+    eprintln!("No suitable SSH private key file found. (You can specify filename with -I)");
+    None
+}
 
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -38,22 +58,30 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let semaphore = Arc::new(Semaphore::new(GETOPT.max_sessions));
 
+    let auth_method = {
+        if GETOPT.private_key_file.is_none() || GETOPT.request_password {
+            AuthMethod::with_password(&prompt_password("Password: ")?)
+        } else {
+            AuthMethod::with_key_file(&GETOPT.private_key_file.as_ref().unwrap(), None)
+        }
+    };
+
     for remote_host in &GETOPT.args {
 
         tasks.spawn({
 
             let remote_host = remote_host.clone();
             let semaphore = semaphore.clone();
+            let auth_method = auth_method.clone();
 
             async move {
 
                 let _semaphore = semaphore.acquire_owned().await.unwrap();
 
                 if GETOPT.verbose {
-                    eprintln!("Connecting to {}:", &remote_host);
+                    eprintln!("Connecting to {}...", &remote_host);
                 }
 
-                let auth_method = AuthMethod::with_key_file(&GETOPT.private_key_file, None);
                 let client = Client::connect((remote_host.clone(), 22),
                     &GETOPT.username, auth_method, ServerCheckMethod::NoCheck).await?;
 

@@ -22,7 +22,8 @@ pub struct Getopt {
     pub verbose: bool,
     pub commands: Vec<String>,
     pub max_sessions: usize,
-    pub private_key_file: String,
+    pub private_key_file: Option<String>,
+    pub request_password: bool,
     pub username: String,
     pub pattern: Option<Regex>,
     pub args: Vec<String>,  // there are positional arguments
@@ -36,7 +37,8 @@ impl Default for Getopt {
             commands: vec![],
             max_sessions: DEFAULT_MAX_SESSIONS,
             #[allow(deprecated)]
-            private_key_file: format!("{}/.ssh/id_ed25519", std::env::home_dir().unwrap().display()),
+            private_key_file: crate::default_key_file(),
+            request_password: false,
             username: whoami::username(),
             pattern: None,
             args: vec![],
@@ -81,6 +83,11 @@ pub fn getopt() -> Getopt {
                 continue;
             },
 
+            "-P" => {
+                getopt.request_password = true;
+                continue;
+            }
+
             /* string value example */
             "-c" => {
                 getopt.commands.push(
@@ -100,9 +107,9 @@ pub fn getopt() -> Getopt {
             }
 
             "-I" => {
-                getopt.private_key_file = args
+                getopt.private_key_file = Some(args
                     .next()
-                    .expect("expected filename of private key");
+                    .expect("expected filename of private key"));
                 continue;
             },
 
