@@ -29,7 +29,9 @@ pub fn usage() {
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
-    println!("Hello, world!");
+    if GETOPT.verbose {
+        dbg!(&*GETOPT);
+    }
 
     let mut tasks: JoinSet<Result<Vec<(String, String, CommandExecutedResult)>, async_ssh2_tokio::Error>> = JoinSet::new();
 
