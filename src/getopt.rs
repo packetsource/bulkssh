@@ -12,6 +12,7 @@
  */
 
 use std::env;
+use regex::Regex;
 
 pub const DEFAULT_MAX_SESSIONS: usize = 16;
 
@@ -23,6 +24,7 @@ pub struct Getopt {
     pub max_sessions: usize,
     pub private_key_file: String,
     pub username: String,
+    pub pattern: Option<Regex>,
     pub args: Vec<String>,  // there are positional arguments
 }
 
@@ -36,6 +38,7 @@ impl Default for Getopt {
             #[allow(deprecated)]
             private_key_file: format!("{}/.ssh/id_ed25519", std::env::home_dir().unwrap().display()),
             username: whoami::username(),
+            pattern: None,
             args: vec![],
         }
     }
@@ -87,6 +90,14 @@ pub fn getopt() -> Getopt {
                 );
                 continue;
             },
+
+            "-g" => {
+                getopt.pattern = Some(Regex::new(
+                    & args.next().expect("expected regular expression"))
+                    .expect("regular expression not valid")
+                );
+                continue;
+            }
 
             "-I" => {
                 getopt.private_key_file = args

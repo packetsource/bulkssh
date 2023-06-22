@@ -15,11 +15,12 @@ lazy_static! { static ref GETOPT: getopt::Getopt = getopt::getopt(); }
 pub fn usage() {
     eprintln!("{} {}: {}\n", &PKG_NAME, &PKG_VERSION, &COMMIT_ID);
     eprintln!("Usage: bulkssh [-v] -c command [router_addrs] ...");
-    eprintln!("       -v            verbose");
-    eprintln!("       -c            command (use quotes to escape white space in command)");
+    eprintln!("       -v            verbose mode");
+    eprintln!("       -c command    (use quotes to escape white space in command)");
     eprintln!("                     (can be repeated, but typically uses new shell, so CWD/env not preserved");
-    eprintln!("       -I            identity/private key file");
-    eprintln!("       -u            username");
+    eprintln!("       -I filename   identity/private key file");
+    eprintln!("       -u username   use specified username");
+    eprintln!("       -g pattern    grep output for lines matching regular expression");
     eprintln!("       -n N          maximum number of concurrent sessions ({})", DEFAULT_MAX_SESSIONS);
 
     process::exit(1);
@@ -78,12 +79,16 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         for result in &results {
                             if result.2.exit_status==0 {
                                 for line in result.2.output.split("\n") {
-                                    println!("{} \"{}\": {}", &result.0, &result.1, &line);
+                                    if GETOPT.pattern.is_none() || GETOPT.pattern.as_ref().unwrap().is_match(&line) {
+                                        println!("{} \"{}\": {}", &result.0, &result.1, &line);
+                                    }
                                 }
                             } else {
                                 for line in result.2.output.split("\n") {
-                                    println!("{} \"{}\" (exit status {}): {}",
-                                        &result.0, &result.1, &result.2.exit_status, &line);
+                                    if GETOPT.pattern.is_none() || GETOPT.pattern.as_ref().unwrap().is_match(&line) {
+                                        println!("{} \"{}\" (exit status {}): {}",
+                                            &result.0, &result.1, &result.2.exit_status, &line);
+                                    }
                                 }
                             }
                         }
